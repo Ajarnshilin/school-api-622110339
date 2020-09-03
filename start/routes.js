@@ -21,8 +21,22 @@ Route.get('/', () => {
 })
 
 Route.group(() => {
-  Route.get('/teachers', 'TeacherController.index')
-  Route.get('/teachers/:id','TeacherController.show')
-  Route.post('/teachers', 'TeacherController.store')
+
+  Route.resource('/teachers','TeacherController')
+
+  // Route.get('/teachers', 'TeacherController.index')
+  // Route.get('/teachers/:id','TeacherController.show')
+  // Route.post('/teachers', 'TeacherController.store')
+  // Route.put('/teachers/:id','TeacherController.update')
+  // Route.patch('/teachers/:id', 'TeacherController.update')
+  // Route.delete('/teachers/:id', 'TeacherController.destroy')
+
+  Route.resource('/subjects','SubjectController')
+  Route.get('/subjects/:id/teacher','SubjectController.showTeacher')
+
+  
+  Route.resource('/students','StudentController')
+  Route.resource('/groups','GroupController')
+  Route.resource('/enrollments','EnrollmentController')
 
 }).prefix('api/v1')
