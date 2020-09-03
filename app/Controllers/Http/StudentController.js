@@ -1,6 +1,7 @@
 'use strict'
 
 const Database = use('Database')
+const Validator = use('Validator')
 
 function numberTypeParamValidator(number){
     if(Number .isNaN(parseInt(number)))
@@ -8,12 +9,10 @@ function numberTypeParamValidator(number){
         return {}
 }
 
-const Hash = use('Hash')
-
 class StudentController {
     async index () {
         const students = await Database.table('students')
-        return { status: 200, error: undefined, data: students}
+        return { status: 200, error: undefined, data: undefined}
     }
 
     async show ({ request }) {
@@ -24,34 +23,61 @@ class StudentController {
         if (ValidateValue.error)
             return { status: 500, error: validateValue.error, data: undefined}
 
-        const group = await Database
-
+        const students = await Database
+            .select('*')
             .from('students')
             .where("student_id", id)
             .first()
 
-        return { status: 200, error: undefined, data: group || {} }
+        return { status: 200, error: undefined, data: student || {} }
     }
 
     async store ({ request }) {
-        const { first_name, last_name, password, email, group_id} = request.body
+        const {first_name, last_name, email, password, group_id} = request.body
 
-        const missingKeys = []
-        if (!first_name) missingKeys.push('first_name')
-        if (!last_name) missingKeys.push('last_name')
-        if (!email) missingKeys.push('email')
-        if (!password) missingKeys.push('password')
-
-        if (!password) missingKeys.push('password')
-        return {status: 422, error: `${missingKeys} is missing`, data: undefined}
-
-        const hashedPassword = await Hash.make(password)
-        const group = await Database
-            .table('students')
-            .insert({ first_name, last_name, password: hashedPassword, email, group_id})
-
-        return { status: 200 , error: undefined, data: { first_name, last_name, password, email, group_id }}
+        const rules = {
+            first_name:'required',
+            last_name:'required',
+            email:'required|unique:students,email',
+            password:'required',
+            group_id:'required'
     }
+
+        const validation = await Validator.validateAll(request.body, rules)
+
+        if(validation.false)
+         return {status: 422, error: validation.message(), data: undefined}
+    }
+
+    async update({request}){
+        const { body , params } = request
+        const { id } = params
+        const { first_name, last_name, email, password, group_id } = body
+
+        const studentId = await Database
+            .table('subjects')
+            .where({student_id:id})
+            .update({first_name, last_name, email, password, group_id})
+
+        const student = await Database
+        .table('subjects')
+        .where({student_id:studentId})
+        .first()
+
+        return { status: 200, error: undefined, data:{ first_name, last_name, email, password, group_id} }
+    }
+
+    async destroy({request}){
+        const { id } = request.params
+
+    await Database
+        .table('students')
+        .where({student_id: id})
+        .delete()
+
+        return { status: 200, error: undefined, data:{message:'success'} }
+    }
+
 }
 
 module.exports = StudentController

@@ -2,6 +2,7 @@
 
 const Database = use('Database')
 const Hash = use('Hash')
+const Validator = use('Validator')
 
 function numberTypeParamValidator(number){
     if (Number.isNaN(parseInt(number)))
@@ -36,15 +37,17 @@ async show ({request}){
 async store({request}){
     const {first_name, last_name, email, password} = request.body
 
-    const missingKey = []
+    const rules = {
+        first_name:'required',
+        last_name:'required',
+        email:'required|unique:teachers,email',
+        password:'required'
+    }
 
-    if(!first_name) missingKey.push('first_name')
-    if(!last_name) missingKey.push('first_name')
-    if(!email) missingKey.push('email')
-    if(!password) missingKey.push('password')
+    const validation = await Validator.validateAll(request.body, rules)
 
-    if(missingKey.length)
-     return {status: 422, error:`${missingKey}: is missing.`, data: undefined}
+    if(validation.false)
+     return {status: 422, error: validation.message(), data: undefined}
 
     const hashPassword = await Hash.make(password)
 
@@ -53,10 +56,38 @@ async store({request}){
         .insert({first_name, last_name, email, password: hashPassword})
     
         return { status: 200, error: undefined, data:{first_name, last_name, email} }
-        // return teacher
+    }
+
+    async update({request}){
+        const { body , params } = request
+        const { id } = params
+        const { first_name, last_name, email } = body
+
+        const teacherId = await Database
+            .table('teachers')
+            .where({teacher_id:id})
+            .update({first_name, last_name, email})
+
+        const teacher = await Database
+        .table('teachers')
+        .where({teacher_id:teacherId})
+        .first()
+
+        return { status: 200, error: undefined, data:{first_name, last_name, email} }
+    }
+
+    async destroy({request}){
+        const { id } = request.params
+
+    await Database
+        .table('teachers')
+        .where({teacher_id: id})
+        .delete()
+
+        return { status: 200, error: undefined, data:{message:'success'} }
     }
 
 }
-acherController
 
-module.exports = Te
+
+module.exports = TeacherController

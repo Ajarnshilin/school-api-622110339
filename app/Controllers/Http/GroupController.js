@@ -1,6 +1,7 @@
 'use strict'
 
 const Database = use('Database')
+const Validator = use('Validator')
 
 function numberTypeParamValidator(number){
     if(Number .isNaN(parseInt(number)))
@@ -8,10 +9,10 @@ function numberTypeParamValidator(number){
         return {}
 }
 
-class GroupController {
+class GrouptController {
     async index () {
-        const groups = await Database.table('groups')
-        return { status: 200, error: undefined, data: groups}
+        const group = await Database.table('groups')
+        return { status: 200, error: undefined, data: undefined}
     }
 
     async show ({ request }) {
@@ -23,7 +24,7 @@ class GroupController {
             return { status: 500, error: validateValue.error, data: undefined}
 
         const group = await Database
-
+            .select('*')
             .from('groups')
             .where("group_id", id)
             .first()
@@ -34,21 +35,46 @@ class GroupController {
     async store ({ request }) {
         const { name } = request.body
 
-        const missingKeys = []
-        if (!first_name) missingKeys.push('first_name')
-        if (!last_name) missingKeys.push('last_name')
-        if (!email) missingKeys.push('email')
-        if (!password) missingKeys.push('password')
+        const rules = {
+            title:'required|unique:groups,name',
+            teacher_id:'required',
+        }
 
-        if (!password) missingKeys.push('password')
-        return {status: 422, error: `${missingKeys} is missing`, data: undefined}
+        const validation = await Validator.validateAll(request.body, rules)
 
-        const group = await Database
-            .table('groups')
-            .insert({ name })
-
-        return { status: 200 , error: undefined, data: { name }}
+        if(validation.false)
+         return {status: 422, error: validation.message(), data: undefined}
     }
+
+    async update({request}){
+        const { body , params } = request
+        const { id } = params
+        const { name } = body
+
+        const groupId = await Database
+            .table('groups')
+            .where({group_id:id})
+            .update({name})
+
+        const groups = await Database
+        .table('groups')
+        .where({group_id:groupId})
+        .first()
+
+        return { status: 200, error: undefined, data:{ name } }
+    }
+
+    async destroy({request}){
+        const { id } = request.params
+
+    await Database
+        .table('groups')
+        .where({group_id: id})
+        .delete()
+
+        return { status: 200, error: undefined, data:{message:'success'} }
+    }
+
 }
 
 module.exports = GroupController
