@@ -12,20 +12,29 @@ function numberTypeParamValidator(number){
 
 class SubjectController {
     async index (request) {
-        const { references = undefined} = request.qs
-        const extractedReferences = references.split(",")
+        const { references = ""} = request.qs
+        // const extractedReferences = references.split(",")
 
         const subjects = Subject.query()
     
-        if (references && extractedReferences.length)
+        // if (references && extractedReferences.length)
+        //     subjects.with(extractedReferences)
+        if(references) {
+            const extractedReferences = references.split(",")
             subjects.with(extractedReferences)
+        }
 
         return { status: 200, error: undefined, data: await subjects.fetch()}
     }
 
     async show ({ request }) {
-        const { id } = request.body
-        const subject = await Subject.find(id)
+        const { id } = request.params
+        const validateValue = numberTypeParamValidator(id)
+
+        if(validateValue.error) 
+            return { status: 500, error: validateValue.error , data: undefined}
+
+            const subject = await Subject.find(id)
 
         return { status: 200, error: undefined, data: subject || {} }
     }
@@ -35,13 +44,7 @@ class SubjectController {
         // const subject = new Subject();
         // subject.title = title;
         // subject.teacher_id = teacher_id;
-        const subject = new Subject()
-            subject.title = title
-            subject.teacher_id = teacher_id
-            await subject.save()
-
-        return { status: 200, error: undefined, data:{message:'success'} }
-
+        
         const rules = {
             title:'required|unique:teachers,title',
             teacher_id:'required'
@@ -51,6 +54,14 @@ class SubjectController {
 
         if(validation.false)
          return {status: 422, error: validation.message(), data: undefined}
+        const subject = new Subject()
+            subject.title = title
+            subject.teacher_id = teacher_id
+            await subject.save()
+
+        return { status: 200, error: undefined, data:{message:'success'} }
+
+        
     }
 
     async update({request}){
@@ -58,13 +69,13 @@ class SubjectController {
         const { id } = params
         const { title, teacher_id } = body
 
-        const subjectId = await Database
-            .table('subjects')
+        const subjectId = await Subject
+            .query()
             .where({subject_id:id})
             .update({title, teacher_id})
 
-        const subject = await Database
-        .table('subjects')
+        const subject = await Subject
+        .query()
         .where({subject_id:subjectId})
         .first()
 
@@ -74,8 +85,8 @@ class SubjectController {
     async destroy({request}){
         const { id } = request.params
 
-    await Database
-        .table('subjects')
+    await Subject
+        .query()
         .where({subject_id: id})
         .delete()
 
@@ -85,7 +96,7 @@ class SubjectController {
     async showTeacher({request}){
         const {id} = request.params
         const subject = await Database
-        .table('subjects')
+        .query()
         .where({subject_id:id})
         .innerJoin('teachers','subject_id','teachers.teacher_id')
         .first()

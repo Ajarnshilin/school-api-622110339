@@ -3,6 +3,7 @@
 const Database = use('Database')
 const Hash = use('Hash')
 const Validator = use('Validator')
+const Teacher = use('App/Models/Teacher')
 
 function numberTypeParamValidator(number){
     if (Number.isNaN(parseInt(number)))
@@ -12,8 +13,15 @@ function numberTypeParamValidator(number){
 }
 
 class TeacherController {
-    async index(){
-        const teachers = await Database.table('teachers')
+
+    async index({request}){
+        const {references = ""} = request.qs
+        const teachers = Teacher
+            .query()
+        if(references) {
+            const extractedReferences = references.split(",")
+            teachers.with(extractedReferences)
+        }
         return {status:200, error:undefined, data: undefined}
     }
 
@@ -25,8 +33,8 @@ async show ({request}){
     if (validateValue.error)
         return {status: 500, error: validateValue.error, data: undefined}
 
-    const teacher = await Database
-        .select('*')
+    const teacher = await Teacher
+        .query()
         .from('teachers')
         .where('teacher_id', id)
         .first()
@@ -41,7 +49,7 @@ async store({request}){
         first_name:'required',
         last_name:'required',
         email:'required|unique:teachers,email',
-        password:'required'
+        password:'required|max:12'
     }
 
     const validation = await Validator.validateAll(request.body, rules)
@@ -51,8 +59,8 @@ async store({request}){
 
     const hashPassword = await Hash.make(password)
 
-    const teacher = await Database
-        .table('teachers')
+    const teacher = await Teacher
+        .query()
         .insert({first_name, last_name, email, password: hashPassword})
     
         return { status: 200, error: undefined, data:{first_name, last_name, email} }
@@ -63,12 +71,12 @@ async store({request}){
         const { id } = params
         const { first_name, last_name, email } = body
 
-        const teacherId = await Database
-            .table('teachers')
+        const teacherId = await Teacher
+            .query()
             .where({teacher_id:id})
             .update({first_name, last_name, email})
 
-        const teacher = await Database
+        const teacher = await Teacher
         .table('teachers')
         .where({teacher_id:teacherId})
         .first()
@@ -80,7 +88,7 @@ async store({request}){
         const { id } = request.params
 
     await Database
-        .table('teachers')
+        .query()
         .where({teacher_id: id})
         .delete()
 

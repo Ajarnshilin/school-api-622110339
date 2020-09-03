@@ -2,6 +2,8 @@
 
 const Database = use('Database')
 const Validator = use('Validator')
+const Validator = use('Validator')
+const Enrollment = use('App/Models/Enrollment')
 
 function numberTypeParamValidator(number){
     if(Number .isNaN(parseInt(number)))
@@ -10,23 +12,28 @@ function numberTypeParamValidator(number){
 }
 
 class EnrollmentController {
-    async index () {
-        const enrollments = await Database.table('enrollments')
+    async index ({request}) {
+        const {references = ""} = request.qs
+        const enrollments = Enrollment
+            .query()
+        if(references) {
+            const extractedReferences = references.split(",")
+            enrollments.with(extractedReferences)
+        }
         return { status: 200, error: undefined, data: undefined}
     }
 
     async show ({ request }) {
         const { id } = request.params
 
-        const ValidateValue = numberTypeParamValidator(id)
+        const validateValue = numberTypeParamValidator(id)
 
-        if (ValidateValue.error)
-            return { status: 500, error: validateValue.error, data: undefined}
+        if(validateValue.error) 
+            return { status: 500, error: validateValue.error , data: undefined}
 
-        const enrollments = await Database
-            .select('*')
-            .from('groups')
-            .where("group_id", id)
+        const enrollment = await Enrollment
+            .query()
+            .where('enrollment_id',id)
             .first()
 
         return { status: 200, error: undefined, data: student || {} }
@@ -46,33 +53,36 @@ class EnrollmentController {
 
         if(validation.false)
          return {status: 422, error: validation.message(), data: undefined}
+
+         const enrollment = await Enrollment
+            .query()
+            .insert({mark , mark_date , student_id , subject_id})
+            return { status: 200, error: undefined, date: {mark,mark_date,student_id,subject_id}}
     }
 
     async update({request}){
-        const { body , params } = request
-        const { id } = params
-        const { mark, mark_date, student_id, subject_id } = body
+        const {body , params} = request
+        const {id} = params
+        const {mark , mark_date , student_id , subject_id} = body
 
-        const enrollmentId = await Database
-            .table('enrollments')
-            .where({enrollment_id:id})
-            .update({mark, mark_date, student_id, subject_id})
-
-        const enrollment = await Database
-        .table('enrollments')
-        .where({enrollment_id:enrollmentId})
-        .first()
+        const enrollmentID = await Enrollment
+            .query()
+            .where('enrollment_id',id)
+            .update({mark , mark_date , student_id , subject_id})
+        const enrollment = await Enrollment
+            .query()
+            .where('enrollment_id',enrollmentID)
+            .first()
 
         return { status: 200, error: undefined, data:{ mark, mark_date, student_id, subject_id} }
     }
 
     async destroy({request}){
         const { id } = request.params
-
-    await Database
-        .table('enrollments')
-        .where({enrollment_id: id})
-        .delete()
+        const deleteEnrollments = await Enrollment
+            .query()
+            .where('enrollment_id',id)
+            .delete()
 
         return { status: 200, error: undefined, data:{message:'success'} }
     }

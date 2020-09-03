@@ -1,80 +1,87 @@
 'use strict'
 
 const Database = use('Database')
+const Hash = use('Hash')
 const Validator = use('Validator')
+const Group = use('App/Models/Group')
 
-function numberTypeParamValidator(number){
-    if(Number .isNaN(parseInt(number)))
-    return { error:`param: ${number} is not supported, Please use number type param.` }
-        return {}
+function numberTypeParamValidator(number) {
+    if(Number.isNaN(parseInt(number))) {
+        return { error: `param: ${number}`}
+    }
+    return{}
 }
 
-class GrouptController {
-    async index () {
-        const group = await Database.table('groups')
-        return { status: 200, error: undefined, data: undefined}
+class GroupController {
+    async index({request}) {
+        const {references = ""} = request.qs
+        const groups = Group
+            .query()
+        if(references) {
+            const extractedReferences = references.split(",")
+            groups.with(extractedReferences)
+        }
+        return { status: 200, error: undefined, data: await groups.fetch()}
     }
-
-    async show ({ request }) {
+    async show({request}) {
         const { id } = request.params
 
-        const ValidateValue = numberTypeParamValidator(id)
+        const validateValue = numberTypeParamValidator(id)
 
-        if (ValidateValue.error)
-            return { status: 500, error: validateValue.error, data: undefined}
+        if(validateValue.error) 
+            return { status: 500, error: validateValue.error , data: undefined}
 
-        const group = await Database
-            .select('*')
-            .from('groups')
-            .where("group_id", id)
+        const group = await Group
+            .query()
+            .where('group_id',id)
             .first()
+        return { status: 200, error: undefined, date: group || {}}
 
-        return { status: 200, error: undefined, data: group || {} }
     }
-
-    async store ({ request }) {
-        const { name } = request.body
+    async store({request}) {
+        const {name} = request.body
 
         const rules = {
-            title:'required|unique:groups,name',
-            teacher_id:'required',
+            name:'required'
         }
+        
+        const validation = await Validator.validateAll(request.body,rules)
 
-        const validation = await Validator.validateAll(request.body, rules)
+        if(validation.fails())
+            return {stats: 422, error: validation.messages(), date: undefined}
 
-        if(validation.false)
-         return {status: 422, error: validation.message(), data: undefined}
+
+        return {status: 422, error: `${missingKeys}` , data: undefined}
+
+        const group = await Group
+            .query()
+            .insert({name})
+            return { status: 200, error: undefined, date: {name}}
     }
+    async update({request}) {
+        const {body , params} = request
+        const {id} = params
+        const {name} = body
 
-    async update({request}){
-        const { body , params } = request
-        const { id } = params
-        const { name } = body
-
-        const groupId = await Database
-            .table('groups')
-            .where({group_id:id})
+        const groupID = await Group
+            .query()
+            .where('group_id',id)
             .update({name})
-
-        const groups = await Database
-        .table('groups')
-        .where({group_id:groupId})
-        .first()
-
-        return { status: 200, error: undefined, data:{ name } }
+        const group = await Group
+            .query()
+            .where('group_id',id)
+            .first()
+        return {status:200 , error: undefined , date: group ||{}}
     }
-
-    async destroy({request}){
+    async destroy({request}) {
         const { id } = request.params
+        const deleteGroup = await Group
+            .query()
+            .where('group_id',id)
+            .delete()
 
-    await Database
-        .table('groups')
-        .where({group_id: id})
-        .delete()
-
-        return { status: 200, error: undefined, data:{message:'success'} }
+        return {status: 200 , error:undefined , date: {message:'success'}}
     }
-
 }
 
 module.exports = GroupController
