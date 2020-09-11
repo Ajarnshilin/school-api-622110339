@@ -1,7 +1,6 @@
 'use strict'
 
 const Database = use('Database')
-const Hash = use('Hash')
 const Validator = use('Validator')
 const Teacher = use('App/Models/Teacher')
 
@@ -57,13 +56,11 @@ async store({request}){
     if(validation.false)
      return {status: 422, error: validation.message(), data: undefined}
 
-    const hashPassword = await Hash.make(password)
-
     const teacher = await Teacher
         .query()
-        .insert({first_name, last_name, email, password: hashPassword})
+        .insert({first_name, last_name, email, password})
     
-        return { status: 200, error: undefined, data:{first_name, last_name, email} }
+        return { status: 200, error: undefined, data:{first_name, last_name, email, password} }
     }
 
     async update({request}){
@@ -74,14 +71,14 @@ async store({request}){
         const teacherId = await Teacher
             .query()
             .where({teacher_id:id})
-            .update({first_name, last_name, email})
+            .update({first_name, last_name, email, password})
 
         const teacher = await Teacher
         .table('teachers')
         .where({teacher_id:teacherId})
         .first()
 
-        return { status: 200, error: undefined, data:{first_name, last_name, email} }
+        return { status: 200, error: undefined, data:{first_name, last_name, email, password} }
     }
 
     async destroy({request}){

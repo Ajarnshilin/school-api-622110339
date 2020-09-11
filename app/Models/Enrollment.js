@@ -14,10 +14,10 @@ class Enrollment extends Model {
         return null
     }
     students() {
-        return this.belongs('App/Models/Student')
+        return this.belongsTo('App/Models/Student')
     }
     subjects() {
-        return this.belongs('App/Models/Subject')
+        return this.belongsToMany('App/Models/Subject')
     }
 }
 

@@ -3,6 +3,8 @@
 const Database = use('Database')
 const Validator = use('Validator')
 const Subject = use('App/Models/Subject')
+const SubjectUtil = require('../../../util/subjectUtil')
+
 
 function numberTypeParamValidator(number){
     if(Number .isNaN(parseInt(number)))
@@ -12,19 +14,19 @@ function numberTypeParamValidator(number){
 
 class SubjectController {
     async index (request) {
-        const { references = ""} = request.qs
+        const { references = undefined} = request.qs
         // const extractedReferences = references.split(",")
-
-        const subjects = Subject.query()
+        const subjectUtil =  new SubjectUtil(subject)
+        const subjects = await subjectUtil.getAll(references)
     
         // if (references && extractedReferences.length)
         //     subjects.with(extractedReferences)
-        if(references) {
-            const extractedReferences = references.split(",")
-            subjects.with(extractedReferences)
-        }
 
-        return { status: 200, error: undefined, data: await subjects.fetch()}
+        return { 
+            status: 200, 
+            error: undefined, 
+            data: subjects
+        }
     }
 
     async show ({ request }) {
