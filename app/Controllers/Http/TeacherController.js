@@ -4,6 +4,7 @@ const Database = use('Database')
 const Validator = use('Validator')
 const Teacher = use('App/Models/Teacher')
 
+
 function numberTypeParamValidator(number){
     if (Number.isNaN(parseInt(number)))
     return { error: 'param: ${number} is not a number, please use number type param instead.'}
@@ -71,20 +72,20 @@ async store({request}){
         const teacherId = await Teacher
             .query()
             .where({teacher_id:id})
-            .update({first_name, last_name, email, password})
+            .update({first_name, last_name, email})
 
         const teacher = await Teacher
-        .table('teachers')
+        .query()
         .where({teacher_id:teacherId})
         .first()
 
-        return { status: 200, error: undefined, data:{first_name, last_name, email, password} }
+        return { status: 200, error: undefined, data:{first_name, last_name, email} }
     }
 
     async destroy({request}){
         const { id } = request.params
 
-    await Database
+    await Teacher
         .query()
         .where({teacher_id: id})
         .delete()
