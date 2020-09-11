@@ -43,6 +43,7 @@ class DatabaseSeeder {
       currentSubjectIndex += subjectPerIteration
     }
 
+    
     // await teachers.forEach(async teacher =>{
     //   await teacher
     //   .subjects()
