@@ -14,7 +14,12 @@ class Student extends Model {
         return null
     }
     teacher() {
-        return this.belongsTo('App/Models/Group')
+        return this.hasMany('App/Models/Group')
+    }
+
+    enrollments(){
+        return this
+        .hasMany('App/Models/Enrollment')
     }
 }
 
